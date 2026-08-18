@@ -13,8 +13,11 @@ enum ToastLiteAlign { top, center, bottom }
 class ToastLite {
   ToastLite._();
 
-  static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
+  /// Attach to `MaterialApp(navigatorKey: ...)`. Mutable (not `final`) so a
+  /// host app that already has its own [GlobalKey]`<NavigatorState>` — e.g.
+  /// for its own navigation service — can reuse that same key here instead
+  /// of introducing a second one (`MaterialApp` only accepts one).
+  static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   static OverlayState get _overlay {
     final overlay = navigatorKey.currentState?.overlay;
@@ -29,6 +32,8 @@ class ToastLite {
 
   static final Map<OverlayEntry, Timer> _toastEntries = <OverlayEntry, Timer>{};
   static OverlayEntry? _loadingEntry;
+  static bool _loadingIgnoresBackButton = false;
+  static _BackButtonInterceptor? _backButtonInterceptor;
 
   /// Show a text toast for [duration], then auto-dismiss.
   ///
@@ -60,11 +65,22 @@ class ToastLite {
   /// Show a full-screen loading overlay. Call [hideLoading] to dismiss.
   /// Calling this again while one is active replaces it — loading never
   /// stacks.
+  ///
+  /// [ignoreBackButton] swallows the Android back button (hardware or
+  /// gesture) while the loading overlay is up, so a user can't pop the
+  /// current screen mid-request — matches bot_toast's
+  /// `BackButtonBehavior.ignore`, which this replaces. Implemented via
+  /// [WidgetsBindingObserver.didPopRoute] (same mechanism bot_toast used),
+  /// not `PopScope` — a plain [OverlayEntry] sits outside any single
+  /// route's widget tree, so `PopScope` inside it would never see the pop.
   static void showLoading({
     Widget? indicator,
     Color barrierColor = const Color(0x80000000),
+    bool ignoreBackButton = true,
   }) {
     hideLoading();
+    _loadingIgnoresBackButton = ignoreBackButton;
+    (_backButtonInterceptor ??= _BackButtonInterceptor()).ensureRegistered();
     final overlay = _overlay;
     final entry = OverlayEntry(
       builder: (context) => _LoadingWidget(
@@ -79,6 +95,7 @@ class ToastLite {
   static void hideLoading() {
     final entry = _loadingEntry;
     _loadingEntry = null;
+    _loadingIgnoresBackButton = false;
     if (entry != null && entry.mounted) {
       entry.remove();
     }
