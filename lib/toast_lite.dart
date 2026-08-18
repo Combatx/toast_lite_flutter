@@ -19,16 +19,13 @@ class ToastLite {
   /// of introducing a second one (`MaterialApp` only accepts one).
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  static OverlayState get _overlay {
-    final overlay = navigatorKey.currentState?.overlay;
-    assert(
-      overlay != null,
-      'ToastLite.navigatorKey belum dipasang di '
-      'MaterialApp(navigatorKey: ToastLite.navigatorKey), atau belum ada '
-      'Navigator yang ter-mount saat ToastLite dipanggil.',
-    );
-    return overlay!;
-  }
+  /// Null when [navigatorKey] isn't attached yet or its [Navigator] hasn't
+  /// mounted — e.g. called from a background-message handler that fires
+  /// before `runApp()` finishes building the widget tree (a real scenario:
+  /// `FirebaseMessaging.onMessageOpenedApp` can deliver its buffered
+  /// cold-start message this early). Every public method below treats this
+  /// as "nothing to show it on" and no-ops instead of crashing.
+  static OverlayState? get _overlay => navigatorKey.currentState?.overlay;
 
   static final Map<OverlayEntry, Timer> _toastEntries = <OverlayEntry, Timer>{};
   static OverlayEntry? _loadingEntry;
@@ -47,6 +44,7 @@ class ToastLite {
     Color textColor = Colors.white,
   }) {
     final overlay = _overlay;
+    if (overlay == null) return;
     OverlayEntry? entry;
     entry = OverlayEntry(
       builder: (context) => _ToastWidget(
@@ -74,6 +72,7 @@ class ToastLite {
   }) {
     hideLoading();
     final overlay = _overlay;
+    if (overlay == null) return;
     final entry = OverlayEntry(
       builder: (context) => _LoadingWidget(
         indicator: indicator,

@@ -14,6 +14,19 @@ void main() {
     ToastLite.clearAll();
   });
 
+  testWidgets(
+      'show()/showLoading()/hideLoading() no-op instead of crashing when '
+      'called before any Navigator has mounted', (tester) async {
+    // Reproduces a real crash: FirebaseMessaging.onMessageOpenedApp can
+    // deliver its buffered cold-start message before runApp() finishes
+    // building the widget tree, so ToastLite.navigatorKey.currentState is
+    // still null at call time. Deliberately no pumpWidget() here.
+    expect(() => ToastLite.show('too early'), returnsNormally);
+    expect(() => ToastLite.showLoading(), returnsNormally);
+    expect(() => ToastLite.hideLoading(), returnsNormally);
+    expect(() => ToastLite.clearAll(), returnsNormally);
+  });
+
   testWidgets('show() inserts a toast with the given message',
       (tester) async {
     await tester.pumpWidget(wrapApp(const SizedBox.shrink()));

@@ -1,3 +1,11 @@
+## 0.1.1
+
+* Fix: `show`/`showLoading` no longer crash with "Null check operator used
+  on a null value" when called before any `Navigator` has mounted (e.g.
+  from `FirebaseMessaging.onMessageOpenedApp`, which can deliver its
+  buffered cold-start message before `runApp()` finishes building the
+  widget tree). They now silently no-op in that case instead.
+
 ## 0.1.0
 
 * Add plugin platform scaffolding: iOS (CocoaPods + Swift Package Manager
