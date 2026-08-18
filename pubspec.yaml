@@ -1,6 +1,6 @@
 name: toast_lite
 description: "Lightweight toast and loading overlay for Flutter, callable from anywhere without a BuildContext."
-version: 0.1.1
+version: 0.1.2
 homepage:
 
 environment:

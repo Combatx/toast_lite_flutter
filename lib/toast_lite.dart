@@ -86,9 +86,13 @@ class ToastLite {
   static void hideLoading() {
     final entry = _loadingEntry;
     _loadingEntry = null;
-    if (entry != null && entry.mounted) {
-      entry.remove();
-    }
+    // `OverlayEntry.remove()` only requires the entry not already be
+    // removed — it does NOT require `mounted` (Flutter batches the first
+    // build; an entry inserted and removed within the same frame is never
+    // `mounted`). Gating on `mounted` here would skip the removal and
+    // leave the entry permanently stuck in the Overlay's list, showing on
+    // the next frame with no way left to remove it.
+    entry?.remove();
   }
 
   /// Remove every active toast and the loading overlay, if any — useful on
@@ -102,10 +106,11 @@ class ToastLite {
 
   static void _removeEntry(OverlayEntry? entry) {
     if (entry == null) return;
-    _toastEntries.remove(entry)?.cancel();
-    if (entry.mounted) {
-      entry.remove();
-    }
+    final timer = _toastEntries.remove(entry);
+    if (timer == null) return;
+    timer.cancel();
+    // Same `mounted` pitfall as hideLoading() — see its comment.
+    entry.remove();
   }
 }
 

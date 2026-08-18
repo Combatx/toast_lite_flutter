@@ -1,3 +1,16 @@
+## 0.1.2
+
+* Fix: `hideLoading`/`show`'s auto-dismiss no longer leak a permanently
+  stuck overlay entry when removal happens before the entry's first
+  build (e.g. `showLoading()` immediately followed by `hideLoading()`
+  within the same frame — a real scenario when the awaited work resolves
+  from a local cache in a few ms). The previous code gated
+  `entry.remove()` on `entry.mounted`, but `OverlayEntry.mounted` only
+  becomes true after Flutter's next build pass — gating on it skipped
+  the removal and left the entry orphaned in the Overlay, rendering on
+  the following frame with no way left to remove it. `remove()` doesn't
+  require `mounted`; it only requires the entry not already be removed.
+
 ## 0.1.1
 
 * Fix: `show`/`showLoading` no longer crash with "Null check operator used

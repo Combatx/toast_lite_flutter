@@ -51,6 +51,24 @@ void main() {
     expect(find.text('sebentar'), findsNothing);
   });
 
+  testWidgets(
+      'hideLoading() called before the entry ever gets a chance to mount '
+      'still removes it (does not leak a stuck spinner)', (tester) async {
+    // Reproduces a real bug: an entry inserted and removed within the same
+    // frame (no pump() in between) is never `mounted` — Flutter only
+    // builds it on the next frame. hideLoading() used to gate removal on
+    // `entry.mounted`, which skipped the removal and left the entry
+    // permanently orphaned in the Overlay, appearing on the very next
+    // pump with no way left to remove it.
+    await tester.pumpWidget(wrapApp(const SizedBox.shrink()));
+
+    ToastLite.showLoading();
+    ToastLite.hideLoading(); // no pump() between show and hide
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
   testWidgets('showLoading()/hideLoading() toggle the spinner',
       (tester) async {
     await tester.pumpWidget(wrapApp(const SizedBox.shrink()));
