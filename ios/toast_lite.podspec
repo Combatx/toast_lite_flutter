@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'toast_lite'
-  s.version          = '0.0.1'
+  s.version          = '0.1.0'
   s.summary          = 'Lightweight toast and loading overlay for Flutter, callable from anywhere without a BuildContext.'
   s.description      = <<-DESC
 Lightweight toast and loading overlay for Flutter, callable from anywhere without a BuildContext.
